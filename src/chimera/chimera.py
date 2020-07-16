@@ -2,6 +2,8 @@
 
 # ==============================================================================
 
+import numpy as np
+
 from mind.base import Base
 from mind.utils import get_args
 
@@ -11,32 +13,37 @@ from mind.utils import get_args
 class Chimera(Base):
     def __init__(self, relatives=None, absolutes=None, softness=1e-3):
         stiffness = np.inf if softness == 0 else 1 / softness
+        absolutes = (
+            absolutes if absolutes is not None else np.zeros(len(relatives)) * np.nan
+        )
+        relatives = (
+            relatives if relatives is not None else np.zeros(len(absolutes)) * np.nan
+        )
         super().__init__(**get_args(**locals()))
 
-    @staticmethod
-    def _step(value):
+    def _step(self, value):
         return np.exp(-np.logaddexp(0, -self.stiffness * value))
 
     def _rescale(self, objs):
         """ rescales objectives and absolute thresholds such that all observed
             objectives are projected onto [0, 1]
         """
-        objectives = np.emtpy(objs.shape)
+        objectives = np.empty(objs.shape)
         absolutes = np.empty(self.absolutes.shape)
         for idx in range(objs.shape[1]):
             min_obj, max_obj = np.amin(objs[:, idx]), np.amax(objs[:, idx])
             if min_obj < max_obj:
-                objectives[idx] = (objs[:, idx] - min_obj) / (max_obj - min_obj)
+                objectives[:, idx] = (objs[:, idx] - min_obj) / (max_obj - min_obj)
                 absolutes[idx] = (self.absolutes[idx] - min_obj) / (max_obj - min_obj)
             else:
-                objectives[idx] = objs[:, idx] - min_obj
+                objectives[:, idx] = objs[:, idx] - min_obj
                 absolutes[idx] = self.absolutes[idx] - min_obj
         return objectives, absolutes
 
     def _shift(self, objectives, absolutes):
         """ shift rescaled objectives based on identified region of interest
         """
-        objs_trans = objectives.tranpose()
+        objs_trans = objectives.transpose()
         objs_shift = np.empty((objs_trans.shape[0] + 1, objs_trans.shape[1]))
 
         shift = 0
@@ -49,9 +56,9 @@ class Chimera(Base):
             maximum = np.amax(obj[domain])
             # calculate thresholds
             if np.isnan(self.relatives[idx]):
-                threshold = minimum + self.relatives[idx] * (maximum - minimum)
-            else:
                 threshold = absolutes[idx]
+            else:
+                threshold = minimum + self.relatives[idx] * (maximum - minimum)
             # adjust to region of interest
             interest = np.where(obj[domain] < threshold)[0]
             if len(interest) > 0:
@@ -67,11 +74,11 @@ class Chimera(Base):
                 objs_shift[idx + 1] = objs_trans[0] + shift
         return objs_shift, thresholds
 
-    def _scalarize(objs_shift, thresholds):
-        merits = objs_shifted[-1].copy()
-        for idx in range(0, objs_shifted.shape[0] - 1)[::-1]:
-            merits *= self.step(-objs_shift[idx] + thresholds[idx])
-            merits += self.step(objs_shift[idx] - thresholds[idx]) * objs_shift[idx]
+    def _scalarize(self, objs_shift, thresholds):
+        merits = objs_shift[-1].copy()
+        for idx in range(0, objs_shift.shape[0] - 1)[::-1]:
+            merits *= self._step(-objs_shift[idx] + thresholds[idx])
+            merits += self._step(objs_shift[idx] - thresholds[idx]) * objs_shift[idx]
         return merits.transpose()
 
     def scalarize(self, objs):
