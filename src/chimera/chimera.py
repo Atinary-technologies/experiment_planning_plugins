@@ -77,16 +77,19 @@ class Chimera(Base):
     def _scalarize(self, objs_shift, thresholds):
         merits = objs_shift[-1].copy()
         for idx in range(0, objs_shift.shape[0] - 1)[::-1]:
-            merits *= self._step(-objs_shift[idx] + thresholds[idx])
-            merits += self._step(objs_shift[idx] - thresholds[idx]) * objs_shift[idx]
+            step = self._step(-objs_shift[idx] + thresholds[idx])
+            merits *= step
+            merits += (1 - step) * objs_shift[idx]
         return merits.transpose()
 
     def scalarize(self, objs):
         objectives, absolutes = self._rescale(objs)
         objs_shift, thresholds = self._shift(objectives, absolutes)
         merits = self._scalarize(objs_shift, thresholds)
-        if np.amax(merits) > 0.0:
-            merits = (merits - np.amin(merits)) / (np.amax(merits) - np.amin(merits))
+        max_merits = np.amax(merits)
+        if max_merits > 0.0:
+            min_merits = np.amin(merits)
+            merits = (merits - min_merits) / (max_merits - min_merits)
         return merits
 
 
