@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 # ==============================================================================
 
@@ -26,8 +26,8 @@ setup(
     ],
     author="ChemOS Inc.",
     author_email="florian@chemos.io",
-    package_dir={"": "src"},
+    package_dir={"chimera": "src/chimera"},
+    packages=find_packages("src"),
     zip_safe=False,
-    tests_require=["pytest"],
-    python_requires=">=3.4",
+    python_requires=">=3.6",
 )

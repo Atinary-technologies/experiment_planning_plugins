@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [3.7]
+        python-version: [3.6, 3.7]
 
     steps:
       - uses: actions/checkout@v2
@@ -31,13 +31,12 @@ jobs:
           ssh-add -l
           pip install --upgrade pip
           pip install -r requirements.txt
-          pip install -e .
+          pip install .
 
       - name: run unit tests (python ${{ matrix.python-version }}
         run: |
           pip install pytest
           pip install pytest-cov
-          pip install pytest-randomly
           pytest --cov=chimera --cov-append --cov-fail-under=50 --cov-report=xml tests/
 
       - name: upload coverage
