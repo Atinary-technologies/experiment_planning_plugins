@@ -4,22 +4,19 @@
 
 import numpy as np
 
-from mind.base import Base
-from mind.utils import get_args
-
 # ==============================================================================
 
 
-class Chimera(Base):
+class Chimera:
     def __init__(self, relatives=None, absolutes=None, softness=1e-3):
-        stiffness = np.inf if softness == 0 else 1 / softness
-        absolutes = (
+        self.softness = softness
+        self.stiffness = np.inf if softness == 0 else 1 / softness
+        self.absolutes = (
             absolutes if absolutes is not None else np.zeros(len(relatives)) * np.nan
         )
-        relatives = (
+        self.relatives = (
             relatives if relatives is not None else np.zeros(len(absolutes)) * np.nan
         )
-        super().__init__(**get_args(**locals()))
 
     def _step(self, value):
         return np.exp(-np.logaddexp(0, -self.stiffness * value))

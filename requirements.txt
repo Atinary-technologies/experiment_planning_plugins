@@ -1,2 +1,1 @@
 numpy
--e git+ssh://git@github.com/chemos-inc-dev/chemos_mind.git@3a63e3bf287535d904d1e6bb01a86cbfa8f27c72#egg=mind
