@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 
-# ==============================================================================
-
 import numpy as np
-
-# ==============================================================================
 
 
 class Chimera:
@@ -87,6 +83,10 @@ class Chimera:
         if max_merits > 0.0:
             min_merits = np.amin(merits)
             merits = (merits - min_merits) / (max_merits - min_merits)
+        
+        # if only one measurement is provided and it is not a good solution, we return 1. (a.k.a. not a good solution)
+        if objs.shape[0]==1 and merits[0] != 0.:
+            return np.array([1.])
         return merits
 
 
